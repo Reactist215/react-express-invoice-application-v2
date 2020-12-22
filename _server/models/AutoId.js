@@ -1,19 +1,20 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const ProductSchema = new Schema(
+const AutoIdSchema = new Schema(
     {
-        name: {
+        field_name: {
             type: String,
-            required: true,
             trim: true
         },
-        price: {
+        field_value: {
             type: Number,
             required: true
         },
-        description: {
-            type: String
+        field_counts: {
+            type: Number,
+            default: 0,
+            required: true
         }
     },
     {
@@ -23,6 +24,6 @@ const ProductSchema = new Schema(
     }
 );
 
-const Product = mongoose.model('Product', ProductSchema);
+const AutoId = mongoose.model('AutoId', AutoIdSchema);
 
-module.exports = { Product };
+module.exports = { AutoId };

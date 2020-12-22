@@ -2,7 +2,7 @@
  * App Header
  */
 import React, { useCallback } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import {
   headerlogo,
   lnEnglish,
@@ -38,9 +38,9 @@ const Header = (props) => {
     <div className="header" style={{ right: "0px" }}>
       {/* Logo */}
       <div className="header-left">
-        <a href="/purple/app/main/dashboard" className="logo">
+        <Link to="/app/main/dashboard" className="logo">
           <img src={headerlogo} width={40} height={40} alt="" />
-        </a>
+        </Link>
       </div>
       {/* /Logo */}
       <a

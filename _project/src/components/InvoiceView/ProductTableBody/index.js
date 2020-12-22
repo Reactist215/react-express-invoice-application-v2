@@ -19,7 +19,7 @@ const ProductTableBody = ({
   const clickEdit = () => {};
   console.log(products);
   return (
-    <tbody>
+    <>
       {products.map((product, idx) => (
         <tr key={idx}>
           <td>
@@ -28,10 +28,11 @@ const ProductTableBody = ({
           <td>
             {/* <span>{product.desc}</span> */}
             <input
-              value={product.desc}
+              value={product.description}
               onChange={(e) => onChangeProduct(idx, e)}
-              name="desc"
+              name="description"
               type="text"
+              className="form-control"
             />
           </td>
           <td>
@@ -48,6 +49,7 @@ const ProductTableBody = ({
               onChange={(e) => onChangeProduct(idx, e)}
               name="quantity"
               type="number"
+              className="form-control"
             />
           </td>
           <td>${getProductPrice(product)}</td>
@@ -65,7 +67,7 @@ const ProductTableBody = ({
             )} */}
             <i
               onClick={() => removeProductFromInvoice(idx)}
-              className="la la-times-circle table-action-icon"
+              className="fa fa-times-circle-o table-action-icon cursor-pointer"
             />
           </td>
         </tr>
@@ -80,7 +82,7 @@ const ProductTableBody = ({
         <td></td>
         <td></td>
       </tr> */}
-    </tbody>
+    </>
   );
 };
 

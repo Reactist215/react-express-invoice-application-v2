@@ -12,18 +12,21 @@ const SET_USER_DATA = "[USER] SET DATA";
 const REMOVE_USER_DATA = "[USER] REMOVE DATA";
 const USER_LOGGED_OUT = "[USER] LOGGED OUT";
 const ADD_CLIENT = "[USER] ADD_CLIENT";
+const ADD_PRODUCT = "[USER] ADD_PRODUCT";
 
 export default {
   SET_USER_DATA,
   REMOVE_USER_DATA,
   USER_LOGGED_OUT,
   ADD_CLIENT,
+  ADD_PRODUCT,
 
   setUserData,
   setUserDataFirebase,
   logoutUser,
   removeUserData,
   addClient,
+  addProduct,
 };
 
 /**
@@ -193,6 +196,9 @@ function logoutUser() {
 
 function addClient(data) {
   return { type: ADD_CLIENT, payload: data };
+}
+function addProduct(data) {
+  return { type: ADD_PRODUCT, payload: data };
 }
 /**
  * Update User Data

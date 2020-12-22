@@ -30,26 +30,14 @@ const helmet = require('helmet');
 const enforce = require('express-sslify');
 const compression = require('compression');
 
-/** Socket IO */
 const app = express();
 const server = require('http').Server(app);
-// const io = require('socket.io')(server);
-// const {
-//     ADD_MESSAGE,
-//     UPDATE_ROOM_USERS,
-//     GET_ROOMS,
-//     GET_ROOM_USERS,
-//     FILTER_ROOM_USERS,
-//     CREATE_MESSAGE_CONTENT
-// } = require('./actions/socketio');
-
-// const { JOIN_ROOM } = require('./helpers/socketEvents');
-
 /** Routes */
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const invoiceRoutes = require('./routes/invoice');
 const clientRoutes = require('./routes/client');
+const productRoutes = require('./routes/product');
 
 /** Middleware */
 app.use(
@@ -80,9 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/invoice', invoiceRoutes);
 app.use('/api/client', clientRoutes);
-// app.use('/api/profile', profileRoutes);
-// app.use('/api/room', roomRoutes);
-// app.use('/api/messages', messageRoutes);
+app.use('/api/product', productRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
     logger.add(

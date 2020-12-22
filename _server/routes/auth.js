@@ -82,9 +82,11 @@ router.post('/register', [checkRegistrationFields], (req, res) => {
  * @param  {} response
  * @access public
  */
-// router.post('/login', async (req, res) => {
 router.post('/login', checkLoginFields, async (req, res) => {
-    const user = await User.findOne({ email: req.body.email }).select('-password');
+    const user = await User.findOne({ email: req.body.email })
+        .select('-password')
+        .populate('clients')
+        .populate('products');
 
     if (!user) {
         return res.status(404).send({
@@ -104,7 +106,10 @@ router.get('/access-token', async (req, res) => {
         const { _id } = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findOne({ _id })
             .select('-password')
-            .populate('clients');
+            .populate('clients')
+            .populate('products');
+
+        console.log('[token]', user);
         const updatedAccessToken = jwt.sign(user.toObject(), process.env.JWT_SECRET, {
             expiresIn: 18000
         });

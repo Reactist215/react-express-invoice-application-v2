@@ -6,24 +6,20 @@ import React, {
   useMemo,
 } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
+import { Link, useHistory } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Applogo } from "../../../Entryfile/imagepath";
 
+import { Applogo } from "../../../Entryfile/imagepath";
 import { jwtService } from "../../../services";
-import { responsiveArray } from "antd/lib/_util/responsiveObserve";
 import {
   NewClientAddSection,
-  NewProductAddSection,
+  AddNewProduct,
   IndividualProductList,
   ProductTableBody,
 } from "../../../components";
 import { userActions } from "../../../store/actions";
-// util functions //
-// import { makeFixed2 } from "../../../helpers/UtiFunctions";
-const makeFixed2 = (number) => {
-  if (!number || Number.isNaN(number)) return 0;
-  return (Math.round(number * 100) / 100).toFixed(2);
-};
+import { makeFixed2 } from "../../../helpers/UtiFunctions";
+
 const getProductPrice = (product) => {
   const { price, quantity } = product;
   return makeFixed2(price * quantity);
@@ -31,44 +27,54 @@ const getProductPrice = (product) => {
 
 const Invoice = () => {
   // redux store states & dispatchers //
-  const user = useSelector((state) => state.user, shallowEqual);
+
+  const history = useHistory();
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.user, shallowEqual);
+  const { products } = user;
 
-  // fetch actions //
+  const [invoiceId, setInvoiceId] = useState(null); // invoiceID e.g #1001
+  const [orgInvoice_id, setOrg_id] = useState(null); // invoice_id e.g 5fe10f1dff0d0958acc9e958
+
+  /** Get Invoice ID from the URL params **/
   useEffect(() => {
-    // jwtService
-    //   .getAllClients(vendor._id)
-    //   .then((response) => {
-    //     setClients(response.data);
-    //   })
-    //   .catch((error) => {
-    //     setClients([]);
-    //   });
-  }, []);
+    const { pathname } = history.location;
+    const params = pathname.split("invoices-view/");
+    if (params.length === 2) setOrg_id(params[1]);
+  }, [history]);
 
-  // component states & handlers //
-  const [sClient, setSClient] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [query, setQuery] = useState("");
-  const [billfor, setBillFor] = useState("");
-  const [individualPs, setIndividualPs] = useState([
-    { _id: 1, name: "Product1", price: 50 },
-    { _id: 2, name: "Product2", price: 150 },
-    { _id: 3, name: "Product3", price: 250 },
-    { _id: 4, name: "Product4", price: 350 },
-    { _id: 5, name: "Product5", price: 540 },
-  ]);
-  const [invoiceProducts, setIProducts] = useState([]);
-  const [tax, setTax] = useState(5);
-  const [discardInput, setDiscardInput] = useState("");
-  const [isOpenNewClient, setIsOpenNewClient] = useState(false);
-  const [isOpenNewProduct, setIsOpenNewProduct] = useState(false);
-  const invoiceId = 1001;
+  /** Fetch Invoice Details From Backend with orgInvoice_id **/
+  useEffect(() => {
+    if (!orgInvoice_id) return;
+    jwtService
+      .getInvoiceFromInvoiceId(orgInvoice_id)
+      .then((response) => {
+        setInvoiceId(response.data.id);
+        setBillFor(response.data.billfor);
+        setSClient(response.data.client);
+        setIProducts(
+          response.data.products.map((p) => ({
+            ...p,
+            ...p.product,
+          }))
+        );
+        setTax(response.data.tax);
+        setStatus(response.data.status);
+      })
+      .catch((error) => console.log("error", error));
+  }, [orgInvoice_id]);
 
-  const filterFunction = (e) => setQuery(e.target.value);
+  /** invoice details state **/
+  const [sClient, setSClient] = useState(null); // selected client in dropdown
+  const [query, setQuery] = useState(""); // search query
+  const [billfor, setBillFor] = useState(""); // bill
+  const [status, setStatus] = useState("draft"); // status of invoice, default is `draft`
+  const [tax, setTax] = useState(5); // tax
+  const [invoiceProducts, setIProducts] = useState([]); // product list of invoice
+
   const filteredClients = useMemo(() => {
+    // momoized value for filtered clients in dropdown according to query
     if (!user || !user.clients) return [];
-
     return user.clients
       .filter((client) => client.role !== "admin")
       .filter((client) => {
@@ -76,34 +82,57 @@ const Invoice = () => {
         const q = query.toLowerCase();
         return name.toLowerCase().includes(q);
       });
-  }, [user]);
+  }, [user, query]);
 
-  const getSClient = () => {
+  /** component state **/
+  const [discardInput, setDiscardInput] = useState(""); // input value of the popup when discarding
+  const [isOpenNewClient, setIsOpenNewClient] = useState(false); // status shows whether add client section is opened or not
+  const [isOpenNewProduct, setIsOpenNewProduct] = useState(false); // status shows whether add product section is opened or not
+
+  // shows "Select Client" when no client is selected, otherwise return client's name
+  const getSClientName = useMemo(() => {
     if (!sClient) return "Select Client";
     return sClient.name;
-  };
+  }, [sClient]);
+  /** component event listeners **/
 
-  const addIndividualProduct = (product) =>
-    setIndividualPs((prod) => prod.concat({ ...product }));
-  const addNewProduct = (product) => {
-    setIProducts((prod) => prod.concat({ ...product }));
-  };
-  const onChangeProduct = (idx, e) => {
-    const { name, value } = e.target;
-    setIProducts((products) => {
-      const newProducts = products.map((p) => p);
-      newProducts[idx][name] = value;
-      return newProducts;
-    });
-  };
-  const removeProductFromInvoice = (idx) => {
-    setIProducts((products) => {
-      const tmpProducts = products.map((p) => p);
-      tmpProducts.splice(idx, 1);
-      return tmpProducts;
-    });
-  };
-  const getTotalPrice = () => {
+  // event listener for query input change
+  const filterFunction = useCallback((e) => setQuery(e.target.value), []);
+
+  // add new product to invoice
+  const addNewProduct = useCallback(
+    (product) => {
+      setIProducts((prod) => prod.concat({ ...product }));
+    },
+    [setIProducts]
+  );
+  // remove product from the invoice product list
+  const removeProductFromInvoice = useCallback(
+    (idx) => {
+      setIProducts((products) => {
+        const tmpProducts = products.map((p) => p);
+        tmpProducts.splice(idx, 1);
+        return tmpProducts;
+      });
+    },
+    [setIProducts]
+  );
+  // change product from the invoice product list
+  const onChangeProduct = useCallback(
+    (idx, e) => {
+      const { name, value } = e.target;
+      setIProducts((products) => {
+        const newProducts = products.map((p) => p);
+        newProducts[idx][name] = value;
+        return newProducts;
+      });
+    },
+    [setIProducts]
+  );
+
+  // get total price of invoice including tax
+  // returns { totalPrice, taxPrice, sum }
+  const getTotalPrice = useMemo(() => {
     if (!invoiceProducts || !invoiceProducts.length)
       return {
         totalPrice: 0.0,
@@ -122,13 +151,32 @@ const Invoice = () => {
       taxPrice: makeFixed2(taxPrice),
       sum: makeFixed2(sum),
     };
-  };
+  }, [invoiceProducts, tax]);
 
-  // Invoice Edit Decision
-  const sendInvoice = () => {};
+  // Invoice Edit Decisions
+  const sendInvoice = () => {
+    jwtService
+      .postInvoice({
+        orgId: orgInvoice_id,
+        id: invoiceId,
+        vendor: user._id,
+        client: sClient._id,
+        billfor,
+        products: invoiceProducts,
+        tax,
+        status: "sent",
+      })
+      .then((response) => {
+        history.push({
+          pathname: "/app/accounts/invoices",
+        });
+      })
+      .catch((error) => console.log("create invoice error", error));
+  };
   const saveInvoice = () => {
     jwtService
       .postInvoice({
+        orgId: orgInvoice_id,
         id: invoiceId,
         vendor: user._id,
         client: sClient._id,
@@ -137,7 +185,11 @@ const Invoice = () => {
         tax,
         status: "draft",
       })
-      .then((response) => console.log("create invoice success", response))
+      .then((response) => {
+        history.push({
+          pathname: "/app/accounts/invoices",
+        });
+      })
       .catch((error) => console.log("create invoice error", error));
   };
   const discardInvoice = () => {};
@@ -154,8 +206,8 @@ const Invoice = () => {
   return (
     <div className="page-wrapper invoice-view">
       <Helmet>
-        <title>Invoice - HRMS Admin Template</title>
-        <meta name="description" content="Login page" />
+        <title>{`Invoice ${invoiceId} Detail`}</title>
+        <meta name="description" content="Invoice Detail Page" />
       </Helmet>
       {/* Page Content */}
       <div className="content container-fluid">
@@ -166,7 +218,7 @@ const Invoice = () => {
               <h3 className="page-title">Invoice</h3>
               <ul className="breadcrumb">
                 <li className="breadcrumb-item">
-                  <a href="/purple/app/main/dashboard">Dashboard</a>
+                  <Link to="/app/main/dashboard">Dashboard</Link>
                 </li>
                 <li className="breadcrumb-item active">Invoice</li>
               </ul>
@@ -190,7 +242,9 @@ const Invoice = () => {
                 <div className="row">
                   <div className="col-sm-4 m-b-20">
                     <ul className="list-unstyled user-detail">
-                      <li>{user && user.firstName + " " + user.lastName}</li>
+                      <li className="primaryColor">
+                        {user && user.firstName + " " + user.lastName}
+                      </li>
                       <li>{user && user.address}</li>
                       <li>{user && user.phone}</li>
                       <li>{user && user.email}</li>
@@ -213,46 +267,41 @@ const Invoice = () => {
                 </div>
                 <div className="row">
                   <div className="col-sm-6 col-lg-4 col-xl-4 m-b-20">
-                    <h5>Invoice to:</h5>
+                    <h4>Invoice to:</h4>
                     <div className="dropdown">
-                      <button
-                        className="btn bg-light dropdown-toggle"
-                        type="button"
-                        id="dropdownMenu2"
+                      <a
+                        className="dropdown-toggle dropdown-on-hover"
+                        href="#"
+                        role="button"
                         data-toggle="dropdown"
-                        aria-haspopup="true"
                         aria-expanded="false"
                       >
-                        <span>{getSClient()}</span>
-                      </button>
-                      <div
-                        className="dropdown-menu"
-                        aria-labelledby="dropdownMenu2"
-                      >
-                        <input
-                          onChange={filterFunction}
-                          className="dropdown-item"
-                          type="text"
-                        />
+                        <span>{getSClientName}</span>
+                      </a>
+                      <div className="dropdown-menu">
+                        <div className="dropdown-item hover-none">
+                          <input onChange={filterFunction} type="text" />
+                        </div>
+                        <div class="dropdown-divider"></div>
                         <div className="dropdown-data">
                           {filteredClients.map((client) => (
-                            <button
+                            <a
                               key={client._id}
                               onClick={() => setSClient(client)}
-                              className="dropdown-item"
-                              type="button"
+                              className="dropdown-item font-italic"
                             >
                               {client.name}
-                            </button>
+                            </a>
                           ))}
-                          <div
+                          <a
                             onClick={() => setIsOpenNewClient(true)}
                             className="dropdown-item"
                           >
-                            <span className="cursor-pointer">
-                              Add new client
+                            <span className="cursor-pointer font-weight-bolder">
+                              <i className="fa fa-plus-circle"></i> Add new
+                              client
                             </span>
-                          </div>
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -262,9 +311,7 @@ const Invoice = () => {
                           <span>{sClient.address}</span>
                         </li>
                         <li>{[sClient.phone]}</li>
-                        <li>
-                          <a href="#">{sClient.email}</a>
-                        </li>
+                        <li>{sClient.email}</li>
                       </ul>
                     )}
                     <NewClientAddSection
@@ -304,26 +351,26 @@ const Invoice = () => {
                         <th className="text-right">#</th>
                       </tr>
                     </thead>
-                    <ProductTableBody
-                      products={invoiceProducts}
-                      onChangeProduct={onChangeProduct}
-                      addNewProduct={addNewProduct}
-                      removeProductFromInvoice={removeProductFromInvoice}
-                    />
+                    <tbody>
+                      <ProductTableBody
+                        products={invoiceProducts}
+                        onChangeProduct={onChangeProduct}
+                        removeProductFromInvoice={removeProductFromInvoice}
+                      />
+                      <AddNewProduct
+                        open={isOpenNewProduct}
+                        onSave={(product) => {
+                          addNewProduct(product);
+                        }}
+                        onClose={() => setIsOpenNewProduct(false)}
+                      />
+                    </tbody>
                   </table>
                 </div>
                 <IndividualProductList
                   attachToInvoiceList={addNewProduct}
-                  individualPs={individualPs}
+                  individualPs={products}
                   setIsOpenNewProduct={setIsOpenNewProduct}
-                />
-                <NewProductAddSection
-                  open={isOpenNewProduct}
-                  onSave={(product) => {
-                    addIndividualProduct(product);
-                    addNewProduct(product);
-                  }}
-                  onClose={() => setIsOpenNewProduct(false)}
                 />
                 <div>
                   <div className="row invoice-payment">
@@ -336,7 +383,7 @@ const Invoice = () => {
                               <tr>
                                 <th>Subtotal:</th>
                                 <td className="text-right">
-                                  $<span>{getTotalPrice().totalPrice}</span>
+                                  $<span>{getTotalPrice.totalPrice}</span>
                                 </td>
                               </tr>
                               <tr>
@@ -353,13 +400,13 @@ const Invoice = () => {
                                   </span>
                                 </th>
                                 <td className="text-right">
-                                  $<span>{getTotalPrice().taxPrice}</span>
+                                  $<span>{getTotalPrice.taxPrice}</span>
                                 </td>
                               </tr>
                               <tr>
                                 <th>Total:</th>
                                 <td className="text-right text-primary">
-                                  <h5>${getTotalPrice().sum}</h5>
+                                  <h5>${getTotalPrice.sum}</h5>
                                 </td>
                               </tr>
                             </tbody>
@@ -382,18 +429,18 @@ const Invoice = () => {
                     <div className="text-right mt-3">
                       <button
                         onClick={sendInvoice}
-                        className="btn btn-success mr-2"
+                        className="btn btn-success btn-sm mr-2"
                       >
                         Send invoice to client
                       </button>
                       <button
                         onClick={saveInvoice}
-                        className="btn btn-primary mr-2"
+                        className="btn btn-primary btn-sm mr-2"
                       >
                         Save
                       </button>
                       <button
-                        className="btn text-danger"
+                        className="btn btn-danger btn-sm"
                         data-toggle="modal"
                         data-target="#discard-confirm-modal"
                       >

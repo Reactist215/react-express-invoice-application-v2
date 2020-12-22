@@ -31,40 +31,38 @@ const IndividualProductList = ({
     <div className="shadow p-5 mb-5 bg-white rounded">
       <h4>Add Product</h4>
       <div className="dropdown">
-        <button
-          className="btn bg-light dropdown-toggle"
-          type="button"
-          id="dropdownMenu3"
+        <a
+          className="dropdown-toggle"
+          href="#"
+          role="button"
           data-toggle="dropdown"
-          aria-haspopup="true"
           aria-expanded="false"
         >
           <span>{getSProduct()}</span>
-        </button>
-        <div className="dropdown-menu" aria-labelledby="dropdownMenu3">
-          <input
-            value={query}
-            onChange={filterFunction}
-            className="dropdown-item"
-            type="text"
-          />
+        </a>
+        <div className="dropdown-menu">
+          <div className="dropdown-item">
+            <input value={query} onChange={filterFunction} type="text" />
+          </div>
+          <div class="dropdown-divider"></div>
           <div className="dropdown-data">
             {filteredProducts.map((product) => (
-              <button
+              <a
                 key={product._id}
                 onClick={() => setSProduct(product)}
-                className="dropdown-item"
-                type="button"
+                className="dropdown-item font-italic"
               >
                 {product.name + " : " + product.price}
-              </button>
+              </a>
             ))}
-            <div
+            <a
               onClick={() => setIsOpenNewProduct(true)}
               className="dropdown-item"
             >
-              <span className="cursor-pointer">Add new Product</span>
-            </div>
+              <span className="cursor-pointer font-weight-bolder">
+                <i className="fa fa-plus-circle"></i> Add new Product
+              </span>
+            </a>
           </div>
         </div>
       </div>
@@ -74,9 +72,12 @@ const IndividualProductList = ({
             <span>{"Product Name : " + sProduct.name}</span>
           </li>
           <li>{"Product Price : $" + sProduct.price}</li>
-          <li onClick={handleAttachToInvoiceList}>
+          <li>
             <div className="mt-3">
-              <button className="custom-default-button">
+              <button
+                onClick={handleAttachToInvoiceList}
+                className="custom-default-button"
+              >
                 Add product to Invoice
               </button>
             </div>

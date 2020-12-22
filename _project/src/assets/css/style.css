@@ -1723,8 +1723,8 @@ table.dataTable thead > tr > td.sorting {
   width: calc(100% - 10px);
   margin: 5px;
 }
-.account-box .account-btn:hover,
-.account-box .account-btn:focus {
+.account-box .account-btn:not(.disabled):hover,
+.account-box .account-btn:not(.disabled):focus {
   border: 0;
   opacity: 0.8;
 }
@@ -2554,8 +2554,7 @@ table.dataTable thead > tr > td.sorting {
 }
 .invoice-view .dropdown-menu input {
   width: auto;
-  border: 1px solid;
-  margin: 0.25rem 1.5rem 1.5rem 1.5rem;
+  border: 1px solid grey;
   padding: 0.25rem;
 }
 .invoice-view .dropdown-menu .dropdown-item:hover {
@@ -8568,13 +8567,42 @@ ul.comment-list li ul.children {
 }
 
 /* My Custom CSS */
+.invoice-view .primaryColor {
+  color: #007bff;
+}
+.invoice-view .hover-none:hover {
+  background-color: transparent;
+}
+.invoice-view .dropdown-toggle.dropdown-on-hover::after {
+  display: none;
+}
+.invoice-view .dropdown-toggle.dropdown-on-hover:hover::after {
+  display: inline-block;
+}
 .table-action-icon {
-  background-color: #6d65c7;
-  padding: 5px;
-  border-radius: 100%;
-  color: white;
-  font-size: 16px;
+  color: black;
+  font-size: 22px;
 }
 .width-150 {
   width: 150px;
+}
+.min-height-150 {
+  min-height: 150px;
+}
+.max-width-content {
+  max-width: max-content;
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.invoice-table tbody tr td input.product-input-control {
+  width: 100%;
+  min-width: 65px;
+}
+.invoice-table tbody tr td span.product-input-btn {
+  padding: 5px 10px;
+  align-self: center;
+}
+table.invoice-table td {
+  vertical-align: middle;
 }

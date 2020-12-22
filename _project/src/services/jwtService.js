@@ -7,6 +7,7 @@ const api_auth = api + "/auth";
 const api_user = api + "/user";
 const api_invoice = api + "/invoice";
 const api_client = api + "/client";
+const api_product = api + "/product";
 // const api = '/api/auth'
 
 class jwtService extends Utils.EventEmitter {
@@ -60,7 +61,7 @@ class jwtService extends Utils.EventEmitter {
           this.setSession(response.data.access_token);
           resolve(response.data.user);
         } else {
-          reject(response.data.error);
+          reject(response.data.errors);
         }
       });
     });
@@ -78,7 +79,7 @@ class jwtService extends Utils.EventEmitter {
             this.setSession(response.data.access_token);
             resolve(response.data.user);
           } else {
-            reject(response.data.error);
+            reject(response.data.errors);
           }
         });
     });
@@ -115,15 +116,15 @@ class jwtService extends Utils.EventEmitter {
   addNewClient = (data) => {
     return axios.post(api_client, data);
   };
+  addNewProduct = (data) => {
+    return axios.post(api_product, data);
+  };
   postInvoice = (data) => {
     return axios.post(api_invoice, data);
   };
-  getMyInvoices = (id) => {
-    return axios.get(api_invoice, {
-      params: {
-        id,
-      },
-    });
+  getInvoiceFromInvoiceId = (id) => axios.get(api_invoice + `/${id}`);
+  getMyInvoices = () => {
+    return axios.get(api_invoice);
   };
 
   setSession = (access_token) => {

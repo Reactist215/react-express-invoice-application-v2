@@ -9,6 +9,7 @@ const initialState = {
   email: "",
   userType: [],
   clients: [],
+  products: [],
   adress: "",
 };
 
@@ -29,6 +30,12 @@ const user = function (state = initialState, action) {
       return {
         ...state,
         clients: state.clients.concat(action.payload),
+      };
+
+    case userActions.ADD_PRODUCT:
+      return {
+        ...state,
+        products: state.products.concat(action.payload),
       };
     default: {
       return state;

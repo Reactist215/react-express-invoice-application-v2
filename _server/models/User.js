@@ -46,6 +46,12 @@ const UserSchema = new Schema(
                 ref: 'Client'
             }
         ],
+        products: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Product'
+            }
+        ],
         adress: {
             type: String,
             default: null

@@ -15,16 +15,21 @@ const InvoiceSchema = new Schema(
         },
         client: {
             type: Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'Client'
         },
         products: [
             {
-                id: {
+                product: {
                     type: Schema.Types.ObjectId,
-                    ref: 'Product'
+                    ref: 'Product',
+                    required: true
                 },
                 quantity: {
-                    type: Number
+                    type: Number,
+                    required: true
+                },
+                description: {
+                    type: Schema.Types.String
                 }
             }
         ],

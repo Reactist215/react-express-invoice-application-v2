@@ -3,12 +3,12 @@ const router = express.Router();
 
 const passport = require('passport');
 
-const { Message } = require('../models/Message');
-
+const { Product } = require('../models/Product');
+const { User } = require('../models/User');
 const { createErrorObject } = require('../middleware/authenticate');
 
 /**
- * @description GET /api/messages/:room_id
+ * @description GET /api/client/:vendor_id
  */
 router.get('/:room_id', passport.authenticate('jwt', { session: false }), async (req, res) => {
     const messages = await Message.find({ room: req.params.room_id });
@@ -21,24 +21,29 @@ router.get('/:room_id', passport.authenticate('jwt', { session: false }), async 
 });
 
 /**
- * @description POST /api/messages/
+ * @description POST /api/product/
  */
 router.post('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
     let errors = [];
+    const { _id } = req.user;
+    const { name, price, description } = req.body;
 
-    if (!req.body.content) {
-        errors.push({ param: 'no_content', msg: 'Message cannot be empty' });
-        return res.json({ errors: createErrorObject(errors) });
-    }
-
-    const newMessage = new Message({
-        content: req.body.content,
-        admin: req.body.admin ? true : false,
-        user: req.user.id,
-        room: req.body.roomId
+    const newproduct = await new Product({
+        name,
+        price,
+        description
     }).save();
 
-    return res.status(200).json(newMessage);
+    const newUser = await User.findOneAndUpdate(
+        { _id },
+        { $addToSet: { products: newproduct._id } },
+        { safe: true, upsert: true, useFindAndModify: true },
+        function(err, vendor) {
+            if (err) throw err;
+        }
+    );
+
+    return res.status(200).json(newproduct);
 });
 
 module.exports = router;
